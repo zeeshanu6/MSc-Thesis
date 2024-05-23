@@ -1,0 +1,143 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+import numpy as np
+from sklearn.preprocessing import LabelEncoder,OneHotEncoder
+from datetime import datetime
+from sklearn.metrics import r2_score, mean_squared_error,mean_squared_error,mean_absolute_error
+import matplotlib.pyplot as plt
+
+
+
+data = pd.read_csv("Joint2022.csv")
+data.head()
+
+
+colo_to_drop=['Application submission time','Anonymised ID','City and country of residence','Graduation year','Previous degree level','Educational agency','Priority','Country of previous university','Previous university','Previous degree']
+data=data.drop(colo_to_drop,axis=1)
+
+
+columns_to_replace = ['Offer','Accepted the offer','Registered']
+data[columns_to_replace] = data[columns_to_replace].replace({'Yes': 1, np.nan: 0})
+
+
+data.head(10)
+
+
+
+
+concatenated_values = pd.concat([data['Country of residence'], data['Citizenship']])
+label_encoder = LabelEncoder()
+concatenated_encoded = label_encoder.fit_transform(concatenated_values)
+data['Country of residence'] = concatenated_encoded[:len(data)]
+data['Citizenship'] = concatenated_encoded[len(data):]
+
+
+
+
+columns_to_replace = ['Gender']
+data[columns_to_replace] = data[columns_to_replace].replace({'male': 1, 'female': 0})
+
+
+program_mapping = {
+    "Master's Degree Programme in Finance (2 years)": '1.1',
+    "Master's Degree Programme in International Business (2 years)": '1.2',
+    "Master's Programme in Industrial Management (2 years)": '1.3',
+    "Master's Programme in Industrial Systems Analytics (2 years)": '1.4',
+    "Master's Programme in Smart Energy (2 years)": '1.5',
+    "Master's Programme in Strategic Business Development (2 years)": '1.6'
+}
+data['Programme'] = data['Programme'].map(program_mapping)
+
+
+data['Date of birth'] = pd.to_datetime(data['Date of birth'], format='%d.%m.%Y')
+current_date = datetime.now()
+data['Date of birth'] = (current_date - data['Date of birth']).dt.days // 365
+
+
+
+
+data.head(10)
+
+
+
+
+features = data[['Programme', 'Citizenship', 'Date of birth','Gender','Country of residence','Offer','Accepted the offer']]  
+target=data['Registered']
+
+
+
+
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42, shuffle=True)
+print(X_train.shape, X_test.shape)
+
+
+
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+
+
+
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print("Model Accuracy:", accuracy)
+
+
+
+
+importances = model.feature_importances_
+print(importances)
+feature_names = X_train.columns
+
+
+indices = np.argsort(importances)[::-1]
+
+
+plt.figure(figsize=(10, 6))
+plt.title("Feature Importances")
+plt.bar(range(X_train.shape[1]), importances[indices], align="center")
+plt.xticks(range(X_train.shape[1]), feature_names[indices], rotation=90)
+plt.xlabel("Feature")
+plt.ylabel("Importance")
+plt.tight_layout()
+plt.show()
+
+
+
+
+values = ('1.5', '44', '34', '0', '16', '1.0', '1.0')
+values_array = np.array(values, dtype=float).reshape(1, -1)
+result = model.predict(values_array)
+print('outcome',result)
+
+
+
+
+r_squared = r2_score(y_test, y_pred)
+print("R-squared (Coefficient of determination):", r_squared)
+
+
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+print("Root Mean Squared Error (RMSE):", rmse)
+
+
+mae = np.sqrt(mean_absolute_error(y_test, y_pred))
+print("Root Absolute Error (MAE):", mae)
+
+
+
+
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+
+
+estimator = model.estimators_[0]
+plt.figure(figsize=(15, 10))
+plot_tree(estimator,
+          feature_names=X_train.columns,
+          class_names=['0', '1'],
+          filled=True)
+plt.show()
