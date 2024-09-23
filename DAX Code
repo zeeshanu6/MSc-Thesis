@@ -1,0 +1,75 @@
+Unique Students per Country J22 =
+CALCULATE(
+    DISTINCTCOUNT('Joint2022IntegrationTable'[Anonymised ID]),
+    ALLEXCEPT('Joint2022IntegrationTable', Joint2022IntegrationTable[Citizenship])
+)
+ Unique Students per Age J22 =
+CALCULATE(
+    DISTINCTCOUNT('Joint2022IntegrationTable'[Anonymised ID]),
+    ALLEXCEPT('Joint2022IntegrationTable', Joint2022IntegrationTable[Age J22])
+)
+ Unique Students per City J22 =
+CALCULATE(
+    DISTINCTCOUNT('Joint2022IntegrationTable'[Anonymised ID]),
+    ALLEXCEPT('Joint2022IntegrationTable', Joint2022IntegrationTable[City of Residence J22])
+)
+ Unique Students per CountryofRes J22 =
+CALCULATE(
+    DISTINCTCOUNT('Joint2022IntegrationTable'[Anonymised ID]),
+    ALLEXCEPT('Joint2022IntegrationTable', Joint2022IntegrationTable[Country of residence])
+)
+
+ Unique Students per Gender J22 =
+CALCULATE(
+    DISTINCTCOUNT('Joint2022IntegrationTable'[Anonymised ID]),
+    ALLEXCEPT('Joint2022IntegrationTable', Joint2022IntegrationTable[Gender])
+)
+To calculate and visualize applicants who were offered, accepted and registered in the programme, following DAX measures were used:
+Count Offered J22 = COUNTROWS(
+    FILTER(
+        Joint2022IntegrationTable,
+        Joint2022IntegrationTable[Offer] = "Yes"
+    )
+)
+ Count Accepted J22 = COUNTROWS(
+    FILTER(
+        Joint2022IntegrationTable,
+        Joint2022IntegrationTable[Accepted the offer] = "Yes"
+    )
+)
+ Count Registered J22 = COUNTROWS(
+    FILTER(
+        Joint2022IntegrationTable,
+        Joint2022IntegrationTable[Registered] = "Yes"
+    )
+)
+
+It was also needed to extract the city out of the ‘city and country’ column. Different applicants have used different ways of writing city and country as there was not any fixed format available for the at studyinfo. Following DAX measure has used to extract city by looking at different data entries, but still it has some limitations.
+City of Residence J22 =
+VAR FullText = Joint2022IntegrationTable[City and country of residence]
+VAR Delimiters = {";", ",", " ", "and", "/", "-"}
+VAR FirstDelimiterPosition =
+    MINX(
+        FILTER(
+            ADDCOLUMNS(
+                Delimiters,
+                "Pos", FIND([Value], FullText, 1, LEN(FullText) + 1)
+            ),
+            [Pos] > 0
+        ),
+        [Pos]
+    )
+RETURN
+IF(
+    FirstDelimiterPosition = LEN(FullText) + 1,
+    FullText,
+    LEFT(FullText, FirstDelimiterPosition - 1)
+) 
+
+Following DAX measure was used to calculate age from the ‘Date of Birth’ column.
+Age J22 = DATEDIFF(Joint2022IntegrationTable[Date of birth], TODAY(), YEAR)
+
+To calculate day, month and year out of application submission time, following DAX measures were applied.
+ Application Submission Day J22 = DAY(Joint2022IntegrationTable[Application submission time])
+Application Submission Month J22 = MONTH(Joint2022IntegrationTable[Application submission time])
+Application Submission Year J22 = YEAR(Joint2022IntegrationTable[Application submission time])
