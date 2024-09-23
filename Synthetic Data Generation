@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+import os
+
+# Step 1: Load your real CSV file with a specified encoding
+file_path = r'C:\Users\mzees\Downloads\AMIT SAVE\SYNTHETIC DATA\Rolling2023IntegrationTable.csv'  # Update with your actual CSV file path
+
+# Try different encodings if one doesn't work
+try:
+    data = pd.read_csv(file_path, encoding='ISO-8859-1')  # You can try 'Windows-1252' if this doesn't work
+except UnicodeDecodeError:
+    data = pd.read_csv(file_path, encoding='Windows-1252')
+
+# Step 2: Analyze the structure of your data
+print("Original Data Preview:")
+print(data.head())
+print("\nData Info:")
+print(data.info())
+
+# Step 3: Generate synthetic data
+synthetic_data = pd.DataFrame()
+
+for column in data.columns:
+    if pd.api.types.is_numeric_dtype(data[column]):
+        mean = data[column].mean()
+        std = data[column].std()
+        synthetic_data[column] = np.random.normal(loc=mean, scale=std, size=len(data))
+    else:
+        unique_values = data[column].unique()
+        synthetic_data[column] = np.random.choice(unique_values, size=len(data))
+
+# Step 4: Export the synthetic data to a new CSV file
+# Change the path to a folder where you know you have write permissions
+synthetic_file_path = r'C:\Users\mzees\Downloads\AMIT SAVE\SYNTHETIC DATA\GENERATED\synthetic_data_file.csv'  # Output file path
+
+# Print the path to check it's correct
+print(f"Saving synthetic data to: {synthetic_file_path}")
+
+# Check if the directory exists before saving
+if not os.path.exists(os.path.dirname(synthetic_file_path)):
+    print("Directory does not exist, please check the path.")
+else:
+    synthetic_data.to_csv(synthetic_file_path, index=False)
+    print(f"Synthetic data generated and saved to {synthetic_file_path}")
